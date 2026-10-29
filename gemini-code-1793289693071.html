@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minigame Kiến Thức - Trắc nghiệm Chương 6</title>
+    <!-- Tích hợp Tailwind CSS cho giao diện -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tích hợp Canvas Confetti cho hiệu ứng pháo hoa -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #f3f4eb 0%, #e2e8f0 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .option-card {
+            transition: all 0.2s ease-in-out;
+        }
+        .option-card:hover:not(.disabled) {
+            background-color: #f8fafc;
+            border-color: #cbd5e1;
+        }
+        .correct {
+            background-color: #dcfce7 !important; /* Xanh lá nhạt */
+            border-color: #22c55e !important; /* Xanh lá đậm */
+            color: #166534;
+        }
+        .wrong {
+            background-color: #fee2e2 !important; /* Đỏ nhạt */
+            border-color: #ef4444 !important; /* Đỏ đậm */
+            color: #991b1b;
+        }
+        .disabled {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+        /* Style cho nút bấm đáp án A, B, C, D */
+        .option-letter {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f1f5f9;
+            border-radius: 8px;
+            font-weight: bold;
+            margin-right: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        .correct .option-letter { background-color: #22c55e; color: white; border-color: #16a34a; }
+        .wrong .option-letter { background-color: #ef4444; color: white; border-color: #dc2626; }
+    </style>
+</head>
+<body class="min-h-screen flex justify-center py-10 px-4">
+
+    <div class="max-w-md w-full">
+        <!-- Header -->
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 bg-teal-700 rounded-xl flex items-center justify-center text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                </svg>
+            </div>
+            <span class="font-bold text-teal-800 text-sm tracking-wider">MINIGAME KIẾN THỨC</span>
+        </div>
+
+        <h1 class="text-3xl font-bold text-slate-800 mb-8 text-center leading-tight">
+            TRẮC NGHIỆM CHƯƠNG 6<br><span class="text-xl">CNH, HĐH VÀ HỘI NHẬP KTQT</span>
+        </h1>
+
+        <!-- Quiz Container -->
+        <div class="bg-white rounded-3xl shadow-xl p-6 relative">
+            
+            <!-- Progress & Score -->
+            <div class="flex justify-between items-center mb-4 text-sm font-bold text-slate-700">
+                <div id="progressText">Câu 1 / 20</div>
+                <div class="flex items-center gap-1 text-yellow-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                        <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clip-rule="evenodd" />
+                    </svg>
+                    <span id="scoreText">0 điểm</span>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-100 rounded-full h-2 mb-6">
+                <div id="progressBar" class="bg-teal-600 h-2 rounded-full transition-all duration-300" style="width: 5%"></div>
+            </div>
+
+            <!-- Question Area -->
+            <div id="quizContent">
+                <div class="text-xs font-bold text-yellow-600 uppercase tracking-wider mb-2">KIẾN THỨC TỔNG HỢP</div>
+                <div id="questionText" class="text-lg font-bold text-slate-800 mb-6 pb-4 border-b-2 border-blue-200">
+                    Đang tải câu hỏi...
+                </div>
+
+                <!-- Options -->
+                <div id="optionsContainer" class="flex flex-col gap-3">
+                    <!-- Options will be generated here by JS -->
+                </div>
+            </div>
+
+            <!-- Explanation -->
+            <div id="explanationContainer" class="hidden mt-4 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg text-sm text-slate-700 italic">
+            </div>
+
+            <!-- Next Button -->
+            <button id="nextBtn" class="hidden w-full mt-6 bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-4 rounded-xl transition shadow-lg shadow-teal-500/30">
+                Câu tiếp theo ➔
+            </button>
+
+            <!-- Result Screen -->
+            <div id="resultScreen" class="hidden text-center py-6">
+                <h2 class="text-2xl font-bold text-slate-800 mb-2">Hoàn thành bài thi!</h2>
+                <p class="text-slate-600 mb-6">Bạn đã trả lời đúng <span id="finalScore" class="font-bold text-teal-600 text-xl">0</span> / 20 câu.</p>
+                <button onclick="location.reload()" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-4 rounded-xl transition shadow-lg">
+                    ↻ Làm lại từ đầu
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Dữ liệu 20 câu hỏi (10 câu Phần B + 10 câu Phần A)
+        const quizData = [
+            // PHẦN B
+            {
+                question: "Theo tài liệu học tập, yếu tố nào được xác định là cốt lõi và là động lực thúc đẩy toàn bộ các lĩnh vực khác trong quá trình toàn cầu hóa?",
+                options: ["Toàn cầu hóa văn hóa và lối sống xã hội.", "Toàn cầu hóa kinh tế giữa các quốc gia.", "Toàn cầu hóa thể chế chính trị và pháp luật.", "Toàn cầu hóa giáo dục và khoa học kỹ thuật."],
+                correct: 1,
+                explanation: "Toàn cầu hóa kinh tế là cốt lõi, là động lực thúc đẩy toàn bộ các lĩnh vực khác."
+            },
+            {
+                question: "Các mức độ hội nhập kinh tế quốc tế được sắp xếp theo tiến trình chuẩn từ thấp đến cao như thế nào?",
+                options: ["FTA -> PTA -> CU -> Thị trường chung -> Liên minh kinh tế - tiền tệ.", "PTA -> FTA -> CU -> Thị trường chung -> Liên minh kinh tế - tiền tệ.", "PTA -> CU -> FTA -> Liên minh kinh tế - tiền tệ -> Thị trường chung.", "CU -> PTA -> FTA -> Thị trường chung -> Liên minh kinh tế - tiền tệ."],
+                correct: 1,
+                explanation: "Tiến trình chuẩn: Thỏa thuận thương mại ưu đãi (PTA) -> Khu vực mậu dịch tự do (FTA) -> Liên minh thuế quan (CU) -> Thị trường chung -> Liên minh kinh tế - tiền tệ."
+            },
+            {
+                question: "Vì sao hội nhập kinh tế quốc tế lại là phương thức phát triển tất yếu đối với các nước đang và kém phát triển hiện nay?",
+                options: ["Giúp tiếp cận nguồn vốn, công nghệ hiện đại và kinh nghiệm quản lý để kết hợp với nguồn lực trong nước.", "Giúp loại bỏ hoàn toàn các nguy cơ rủi ro cạnh tranh và bảo hộ tuyệt đối.", "Giúp thay thế toàn bộ nguồn lực nội tại bằng hỗ trợ tài chính không hoàn lại.", "Giúp giảm bớt sự phụ thuộc vào thị trường tiêu dùng nội địa và tập trung xuất khẩu."],
+                correct: 0,
+                explanation: "Hội nhập giúp tiếp cận vốn, công nghệ, kinh nghiệm quản lý từ bên ngoài để phát triển nhanh, bền vững."
+            },
+            {
+                question: "Trong nội dung chuẩn bị các điều kiện hội nhập kinh tế quốc tế, yếu tố nào đóng vai trò then chốt về mặt thể chế?",
+                options: ["Hoàn thiện hệ thống pháp luật, nâng cao hiệu lực và độ minh bạch của thể chế KTTT định hướng XHCN.", "Mở cửa tức thì và toàn diện thị trường tài chính nội địa.", "Gia tăng tối đa đàm phán hiệp định song phương mà không cần sửa đổi luật pháp.", "Tập trung xây dựng thêm các rào cản kỹ thuật khắt khe."],
+                correct: 0,
+                explanation: "Hoàn thiện hệ thống pháp luật, cơ chế quản lý kinh tế thị trường đồng bộ và minh bạch là then chốt về thể chế."
+            },
+            {
+                question: "Tác động tích cực nào của hội nhập KTQT đóng vai trò là đòn bẩy trực tiếp thúc đẩy chuyển dịch cơ cấu kinh tế ở Việt Nam?",
+                options: ["Thu hút mạnh mẽ nguồn vốn đầu tư nước ngoài (FDI), tiếp thu công nghệ hiện đại.", "Triệt tiêu hoàn toàn áp lực cạnh tranh gay gắt từ bên ngoài.", "Đảm bảo phân phối đồng đều ngay lập tức mọi lợi ích kinh tế.", "Biến nền kinh tế thành thị trường tiêu thụ độc quyền sản phẩm công nghệ cao."],
+                correct: 0,
+                explanation: "Thu hút FDI, tiếp thu công nghệ hiện đại tạo đòn bẩy nâng cao năng lực cạnh tranh và chuyển dịch cơ cấu kinh tế."
+            },
+            {
+                question: "Việc Tập đoàn Samsung đầu tư hơn 20 tỷ USD và sản xuất hơn 50% smartphone toàn cầu tại VN phản ánh khía cạnh nào?",
+                options: ["Việt Nam tận dụng hiệu quả hội nhập để trở thành đại bản doanh sản xuất của các tập đoàn công nghệ.", "Việt Nam đã hoàn thành trọn vẹn tiến trình CNH, HĐH.", "Đầu tư FDI chỉ mang tính tạm thời, không đóng góp giá trị.", "Chuỗi giá trị cốt lõi đã được chuyển giao hoàn toàn cho doanh nghiệp VN."],
+                correct: 0,
+                explanation: "Đây là bằng chứng hội nhập giúp Việt Nam trở thành 'đại bản doanh' sản xuất của các tập đoàn công nghệ hàng đầu."
+            },
+            {
+                question: "Một trong những rủi ro lớn về mặt môi trường và công nghệ khi tham gia hội nhập KTQT là gì?",
+                options: ["Nguy cơ trở thành nơi tiêu thụ hàng hóa kém chất lượng, tiếp nhận công nghệ cũ, gây ô nhiễm.", "Sự suy giảm nghiêm trọng thu hút vốn FDI vào công nghiệp chế tạo.", "Nguy cơ kinh tế bị cô lập khỏi biến động tài chính toàn cầu.", "Phải dỡ bỏ ngay lập tức toàn bộ hệ thống thuế quan không có lộ trình."],
+                correct: 0,
+                explanation: "Nguy cơ trở thành nơi tiêu thụ hàng hóa kém chất lượng, công nghệ lạc hậu gây ô nhiễm môi trường."
+            },
+            {
+                question: "Trong bối cảnh CMCN 4.0, CNH-HĐH ở Việt Nam đòi hỏi phải tập trung vào định hướng nào?",
+                options: ["Phát triển lực lượng sản xuất dựa trên khoa học - công nghệ, đổi mới sáng tạo, chuyển đổi số.", "Tập trung ưu tiên phát triển công nghiệp khai khoáng thô.", "Tách rời CNH với hội nhập KTQT nhằm bảo hộ nội địa.", "Duy trì tỷ trọng nông nghiệp truyền thống chiếm đa số."],
+                correct: 0,
+                explanation: "Đòi hỏi phát triển lực lượng sản xuất dựa trên KH-CN, đổi mới sáng tạo, chuyển đổi số và chuyển dịch cơ cấu hiện đại."
+            },
+            {
+                question: "Để giảm thiểu tác động tiêu cực từ rủi ro khủng hoảng KT-TC toàn cầu, Việt Nam cần giải pháp cốt lõi nào?",
+                options: ["Xây dựng nền kinh tế độc lập tự chủ, kết hợp hài hòa nội lực và ngoại lực.", "Đóng cửa thị trường tài chính nội địa.", "Dựa hoàn toàn vào vốn ODA để bù đắp thâm hụt.", "Dừng toàn bộ hoạt động xuất nhập khẩu hàng hóa với các quốc gia lớn."],
+                correct: 0,
+                explanation: "Phải xây dựng nền kinh tế độc lập tự chủ, coi nội lực là quyết định và kết hợp hiệu quả với ngoại lực."
+            },
+            {
+                question: "Trước áp lực cạnh tranh từ hàng nhập khẩu khi thực hiện FTA, giải pháp ứng xử phù hợp nhất là gì?",
+                options: ["Doanh nghiệp chủ động đổi mới công nghệ; Nhà nước kiến tạo môi trường cạnh tranh bình đẳng.", "Nhà nước ban hành lệnh cấm nhập khẩu hàng ngoại.", "Doanh nghiệp ngừng hoạt động và xin hỗ trợ trực tiếp từ ngân sách.", "Nhà nước đơn phương rút khỏi các hiệp định thương mại tự do."],
+                correct: 0,
+                explanation: "Doanh nghiệp nâng cao năng lực cạnh tranh, Nhà nước kiến tạo thể chế và môi trường kinh doanh minh bạch."
+            },
+            // PHẦN A
+            {
+                question: "Cách mạng công nghiệp lần thứ nhất có đặc trưng cốt lõi nào sau đây?",
+                options: ["Chuyển từ lao động thủ công sang lao động máy móc với cơ giới hóa bằng năng lượng nước và hơi nước.", "Chuyển từ sản xuất cơ khí sang dây chuyền chuyên môn hóa dựa trên năng lượng điện.", "Chuyển từ sản xuất điện cơ sang tự động hóa nhờ công nghệ thông tin.", "Chuyển sang hệ thống sản xuất thông minh gắn liền với kết nối vạn vật."],
+                correct: 0,
+                explanation: "CMCN lần thứ nhất (giữa TK 18 - 19) sử dụng năng lượng nước và hơi nước để cơ giới hóa."
+            },
+            {
+                question: "Mô hình công nghiệp hóa kiểu Liên Xô (cũ) có đặc điểm nổi bật nào?",
+                options: ["Bắt đầu từ công nghiệp nhẹ để tích lũy vốn.", "Ưu tiên phát triển công nghiệp nặng thông qua cơ chế kế hoạch hóa tập trung và mệnh lệnh.", "Thực hiện chiến lược CNH rút ngắn gắn với đẩy mạnh xuất khẩu.", "Đi thẳng vào phát triển các ngành công nghệ cao dựa trên FDI."],
+                correct: 1,
+                explanation: "Mô hình Liên Xô ưu tiên phát triển công nghiệp nặng dựa trên cơ chế kế hoạch hóa tập trung của Nhà nước."
+            },
+            {
+                question: "Vì sao CNH, HĐH là tính tất yếu khách quan đối với các nước quá độ lên CNXH như Việt Nam?",
+                options: ["Là con đường duy nhất để loại bỏ kinh tế phi XHCN.", "Là quy luật phổ biến để xây dựng cơ sở vật chất - kỹ thuật cho nền kinh tế từ xuất phát điểm thấp.", "Là biện pháp ngắn nhất để triệt tiêu sự cạnh tranh.", "Là yêu cầu bắt buộc để tập trung lao động vào công nghiệp nặng."],
+                correct: 1,
+                explanation: "Việt Nam có xuất phát điểm thấp, chưa có sẵn cơ sở vật chất nên CNH, HĐH là con đường tất yếu để xây dựng nền tảng."
+            },
+            {
+                question: "Đặc điểm nào phản ánh ĐÚNG thực tiễn quá trình CNH, HĐH ở Việt Nam hiện nay?",
+                options: ["Thực hiện tuần tự các bước phát triển công nghiệp truyền thống trước.", "Tiến hành trong điều kiện KTTT định hướng XHCN và gắn với phát triển kinh tế tri thức.", "Tập trung duy nhất nguồn lực vào khu vực kinh tế nhà nước.", "Phát triển độc lập khép kín nhằm hạn chế tối đa ảnh hưởng toàn cầu hóa."],
+                correct: 1,
+                explanation: "CNH, HĐH ở VN gắn với kinh tế tri thức, hội nhập KTQT và trong điều kiện kinh tế thị trường định hướng XHCN."
+            },
+            {
+                question: "Xu hướng chuyển dịch cơ cấu kinh tế hợp lý trong quá trình CNH, HĐH ở Việt Nam là gì?",
+                options: ["Tăng tỷ trọng nông nghiệp, giảm tỷ trọng công nghiệp, dịch vụ.", "Giảm tỷ trọng ngành nông nghiệp, tăng tỷ trọng ngành công nghiệp và dịch vụ theo hướng hiện đại.", "Giữ nguyên tỷ trọng giữa các ngành kinh tế.", "Tập trung toàn bộ nguồn lực chuyển sang khai khoáng để xuất khẩu thô."],
+                correct: 1,
+                explanation: "Hướng chuyển dịch chung là giảm tỷ trọng nông nghiệp, tăng tỷ trọng công nghiệp và dịch vụ."
+            },
+            {
+                question: "Để chủ động thích ứng với CMCN 4.0, Việt Nam cần tập trung vào giải pháp nào?",
+                options: ["Mở rộng quy mô ngành sử dụng nhiều lao động phổ thông.", "Xây dựng hạ tầng số, phát triển nguồn nhân lực chất lượng cao và thúc đẩy đổi mới sáng tạo.", "Hạn chế tối đa việc ứng dụng trí tuệ nhân tạo.", "Nhập khẩu toàn bộ máy móc cũ để tiết kiệm chi phí."],
+                correct: 1,
+                explanation: "Trọng tâm là xây dựng hạ tầng số, phát triển nhân lực chất lượng cao và đổi mới sáng tạo."
+            },
+            {
+                question: "Mô hình CNH của Nhật Bản và các nước công nghiệp mới (NICs) có điểm gì khác biệt so với mô hình cổ điển?",
+                options: ["Kéo dài từ 60 đến 80 năm và ưu tiên tuyệt đối công nghiệp nhẹ.", "Dựa hoàn toàn vào cơ chế kế hoạch hóa tập trung.", "Thực hiện chiến lược CNH rút ngắn, đẩy mạnh xuất khẩu và tận dụng thành tựu KH-CN đi trước.", "Triệt tiêu mọi thành phần kinh tế tư nhân."],
+                correct: 2,
+                explanation: "Nhật Bản và NICs dùng chiến lược CNH rút ngắn, hướng vào xuất khẩu và tận dụng công nghệ nước ngoài."
+            },
+            {
+                question: "Việc hoàn thiện quan hệ sản xuất trong quá trình CNH, HĐH ở Việt Nam đòi hỏi yêu cầu nào?",
+                options: ["Duy trì và củng cố vai trò chủ đạo của kinh tế nhà nước cùng sự phát triển bình đẳng của các thành phần kinh tế.", "Chuyển đổi toàn bộ doanh nghiệp tư nhân thành doanh nghiệp nhà nước.", "Xóa bỏ cơ chế thị trường và áp dụng phân phối tem phiếu.", "Ngừng thu hút vốn FDI để bảo vệ doanh nghiệp nội địa."],
+                correct: 0,
+                explanation: "Phát huy vai trò chủ đạo của KTNN kết hợp với sự phát triển bình đẳng của các thành phần kinh tế khác."
+            },
+            {
+                question: "Yếu tố nào đóng vai trò là lực lượng sản xuất hàng đầu và là động lực chính của CNH, HĐH hiện đại?",
+                options: ["Nguồn tài nguyên thiên nhiên khoáng sản thô.", "Khoa học - công nghệ hiện đại và nguồn nhân lực chất lượng cao.", "Lao động phổ thông dồi dào với chi phí rẻ.", "Hệ thống hạ tầng giao thông truyền thống."],
+                correct: 1,
+                explanation: "Trong bối cảnh kinh tế tri thức, KH-CN và nhân lực chất lượng cao là lực lượng sản xuất trực tiếp và động lực then chốt."
+            },
+            {
+                question: "Tác động tích cực cốt lõi của hội nhập KTQT đối với CNH, HĐH ở Việt Nam là gì?",
+                options: ["Giúp triệt tiêu sự cạnh tranh từ các tập đoàn đa quốc gia.", "Mở rộng thị trường, thu hút nguồn vốn, công nghệ hiện đại và nâng cao năng lực cạnh tranh.", "Đảm bảo nền kinh tế không chịu ảnh hưởng từ khủng hoảng toàn cầu.", "Giảm bớt nhu cầu đào tạo nhân lực trình độ cao."],
+                correct: 1,
+                explanation: "Hội nhập mở ra thị trường xuất khẩu, thu hút FDI, tiếp thu công nghệ và kinh nghiệm quản lý."
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        const labels = ['A', 'B', 'C', 'D'];
+
+        // DOM Elements
+        const questionText = document.getElementById("questionText");
+        const optionsContainer = document.getElementById("optionsContainer");
+        const progressText = document.getElementById("progressText");
+        const progressBar = document.getElementById("progressBar");
+        const scoreText = document.getElementById("scoreText");
+        const explanationContainer = document.getElementById("explanationContainer");
+        const nextBtn = document.getElementById("nextBtn");
+        const quizContent = document.getElementById("quizContent");
+        const resultScreen = document.getElementById("resultScreen");
+        const finalScore = document.getElementById("finalScore");
+
+        function fireConfetti() {
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff']
+            });
+        }
+
+        function loadQuestion() {
+            const q = quizData[currentQuestion];
+            
+            // Update Text & Progress
+            questionText.innerText = q.question;
+            progressText.innerText = `Câu ${currentQuestion + 1} / ${quizData.length}`;
+            progressBar.style.width = `${((currentQuestion + 1) / quizData.length) * 100}%`;
+            
+            // Reset state
+            optionsContainer.innerHTML = '';
+            explanationContainer.classList.add("hidden");
+            nextBtn.classList.add("hidden");
+
+            // Create options
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement("button");
+                btn.className = "option-card flex items-center w-full text-left p-3 border-2 border-slate-200 rounded-xl bg-white text-slate-700 font-medium";
+                btn.innerHTML = `
+                    <div class="option-letter">${labels[index]}</div>
+                    <div class="flex-1">${opt}</div>
+                `;
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selectedIndex, selectedBtn) {
+            const q = quizData[currentQuestion];
+            const allBtns = optionsContainer.children;
+            
+            // Disable all buttons
+            for(let btn of allBtns) {
+                btn.classList.add("disabled");
+            }
+
+            if(selectedIndex === q.correct) {
+                // Đúng
+                selectedBtn.classList.add("correct");
+                score += 1;
+                scoreText.innerText = `${score} điểm`;
+                fireConfetti(); // Bắn pháo hoa
+            } else {
+                // Sai
+                selectedBtn.classList.add("wrong");
+                allBtns[q.correct].classList.add("correct"); // Hiện đáp án đúng
+            }
+
+            // Hiện giải thích
+            explanationContainer.innerHTML = `<strong>Giải thích:</strong> ${q.explanation}`;
+            explanationContainer.classList.remove("hidden");
+
+            // Hiện nút Next
+            nextBtn.classList.remove("hidden");
+        }
+
+        nextBtn.onclick = () => {
+            currentQuestion++;
+            if(currentQuestion < quizData.length) {
+                loadQuestion();
+            } else {
+                // Hoàn thành
+                quizContent.classList.add("hidden");
+                explanationContainer.classList.add("hidden");
+                nextBtn.classList.add("hidden");
+                
+                finalScore.innerText = score;
+                resultScreen.classList.remove("hidden");
+            }
+        };
+
+        // Start
+        loadQuestion();
+    </script>
+</body>
+</html>
